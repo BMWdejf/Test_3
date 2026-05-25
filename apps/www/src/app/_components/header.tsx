@@ -1,7 +1,16 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth/server";
 
-export function Header() {
+export async function Header() {
+  const { data: session } = await auth.getSession();
+  const user = session?.user;
+  const role = (user as { role?: string | null } | undefined)?.role;
+  const isAdmin = role === "admin";
+  const isVerified = user?.emailVerified === true;
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-5">
       <div className="container mx-auto flex h-16 items-center justify-between">
@@ -44,6 +53,29 @@ export function Header() {
         </nav>
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
+          {user ? (
+            !isVerified ? (
+              <Button asChild size="sm" variant="outline">
+                <Link
+                  href={`/auth/verify-email?email=${encodeURIComponent(user.email ?? "")}`}
+                >
+                  Ověřit email
+                </Link>
+              </Button>
+            ) : isAdmin ? (
+              <Button asChild size="sm">
+                <Link href="/admin">Go to admin</Link>
+              </Button>
+            ) : (
+              <Button asChild size="sm" variant="outline">
+                <Link href="/auth/sign-out">Sign out</Link>
+              </Button>
+            )
+          ) : (
+            <Button asChild size="sm">
+              <Link href="/auth/sign-in?redirectTo=/admin">Sign in</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
